@@ -1,6 +1,8 @@
 package br.edu.udesc.item.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
     @Entity
     @Table(name = "itens")
@@ -61,15 +63,20 @@ import java.time.LocalDate;
             this.id = id;
         }
 
+
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
 
+        @NotBlank(message = "O nome é obrigatório")
+        @Size(max = 100, message = "O nome deve ter no máximo 100 caracteres")
         @Column(nullable = false)
         private String nome;
 
+        @NotBlank(message = "A descrição é obrigatória")
         @Column(nullable = false)
         private String descricao;
+
 
         private String categoria;
 

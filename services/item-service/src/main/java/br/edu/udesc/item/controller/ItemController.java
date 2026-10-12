@@ -1,8 +1,10 @@
 package br.edu.udesc.item.controller;
 import br.edu.udesc.item.model.Item;
+import br.edu.udesc.item.model.StatusItem;
 import br.edu.udesc.item.service.ItemService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import java.util.List;
 
 
@@ -18,7 +20,7 @@ public class ItemController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Item cadastrar(@RequestBody Item item) {
+    public Item cadastrar(@Valid @RequestBody Item item) {
         return service.cadastrar(item);
     }
 
@@ -30,5 +32,13 @@ public class ItemController {
     @GetMapping("/{id}")
     public Item buscarPorId(@PathVariable Long id) {
         return service.buscarPorId(id);
+    }
+
+    @PatchMapping("/{id}/status")
+    public Item atualizarStatus(
+            @PathVariable Long id,
+            @RequestBody StatusItem novoStatus
+    ) {
+        return service.atualizarStatus(id, novoStatus);
     }
 }

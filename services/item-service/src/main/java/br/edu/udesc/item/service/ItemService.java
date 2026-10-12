@@ -34,4 +34,15 @@ public class ItemService {
                         )
                 );
     }
+
+    public Item atualizarStatus(Long id, StatusItem novoStatus) {
+        Item item = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Item não encontrado: " + id
+                ));
+
+        item.setStatus(novoStatus);
+
+        return repository.save(item);
+    }
 }
