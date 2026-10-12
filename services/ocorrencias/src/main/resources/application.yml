@@ -1,0 +1,40 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: ocorrencia-service
+  datasource:
+    url: jdbc:h2:file:${DB_PATH:./data/ocorrenciadb}
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1s
+        default-requeue-rejected: false
+
+ocorrencia:
+  item-service-url: ${ITEM_SERVICE_URL:http://localhost:8081}
+  reserva-timeout-minutes: ${OCORRENCIA_RESERVA_TIMEOUT_MINUTES:5}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

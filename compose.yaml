@@ -23,6 +23,32 @@ services:
     depends_on:
       - postgres
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build: ./services/item-auth
+    container_name: auth-service
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-com-no-minimo-32-caracteres}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@achados.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@1234}
+      DB_PATH: /data/authdb
+      RABBITMQ_HOST: rabbitmq
+    volumes:
+      - auth-data:/data
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
   api-gateway:
     build: ./services/api-gateway
     container_name: api-gateway
@@ -31,15 +57,34 @@ services:
     environment:
       JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-com-no-minimo-32-caracteres}
       ADMIN_KEY: ${ADMIN_KEY:-admin-dev-key}
-      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:8082}
-      OCORRENCIA_SERVICE_URL: ${OCORRENCIA_SERVICE_URL:-http://ocorrencia-service:8083}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:8081}
+      OCORRENCIA_SERVICE_URL: ${OCORRENCIA_SERVICE_URL:-http://ocorrencia-service:8082}
       ITEM_SERVICE_URL: ${ITEM_SERVICE_URL:-http://item-service:8081}
       SPRING_DATASOURCE_URL: jdbc:h2:file:/data/gatewaydb
     volumes:
       - gateway-data:/data
     depends_on:
       - item-service
+      - auth-service
+
+  ocorrencia-service:
+    build: ./services/ocorrencias
+    container_name: ocorrencia-service
+    environment:
+      DB_PATH: /data/ocorrenciadb
+      ITEM_SERVICE_URL: http://item-service:8081
+      RABBITMQ_HOST: rabbitmq
+      OCORRENCIA_RESERVA_TIMEOUT_MINUTES: 5
+    volumes:
+      - ocorrencia-data:/data
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      item-service:
+        condition: service_started
 
 volumes:
   postgres_data:
   gateway-data:
+  auth-data:
+  ocorrencia-data:

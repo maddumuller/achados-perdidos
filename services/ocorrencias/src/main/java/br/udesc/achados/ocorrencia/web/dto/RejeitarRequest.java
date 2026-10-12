@@ -1,0 +1,11 @@
+package br.udesc.achados.ocorrencia.web.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record RejeitarRequest(
+        @NotBlank(message = "O motivo é obrigatório")
+        @Size(min = 5, max = 500, message = "O motivo deve ter entre 5 e 500 caracteres")
+        String motivo
+) {
+}
