@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/gatewaydb}
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: false
+
+gateway:
+  jwt-secret: ${JWT_SECRET:troque-este-segredo-com-no-minimo-32-caracteres}
+  admin-key: ${ADMIN_KEY:admin-dev-key}
+  services:
+    auth-url: ${AUTH_SERVICE_URL:http://localhost:8082}
+    ocorrencia-url: ${OCORRENCIA_SERVICE_URL:http://localhost:8083}
+    item-url: ${ITEM_SERVICE_URL:http://localhost:8081}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

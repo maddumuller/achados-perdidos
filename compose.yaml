@@ -23,5 +23,23 @@ services:
     depends_on:
       - postgres
 
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-com-no-minimo-32-caracteres}
+      ADMIN_KEY: ${ADMIN_KEY:-admin-dev-key}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:8082}
+      OCORRENCIA_SERVICE_URL: ${OCORRENCIA_SERVICE_URL:-http://ocorrencia-service:8083}
+      ITEM_SERVICE_URL: ${ITEM_SERVICE_URL:-http://item-service:8081}
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/gatewaydb
+    volumes:
+      - gateway-data:/data
+    depends_on:
+      - item-service
+
 volumes:
   postgres_data:
+  gateway-data:
