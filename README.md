@@ -26,8 +26,8 @@ Sistema de Achados e Perdidos desenvolvido em arquitetura de microsserviços par
 ```
 
 1. **[api-gateway](services/api-gateway/README.md)**: Porta única de entrada (8080), validação centralizada de JWT, rate limiting, circuit breaker, logs de auditoria e roteamento.
-2. **[auth-service (item-auth)](services/item-auth/README.md)**: Cadastro, login, emissão de JWT, controle de papéis (`USER`/`ADMIN`), proteção de força bruta e publicação de `usuario.desativado`.
-3. **[ocorrencia-service](services/ocorrencias/README.md)**: Gerenciamento do ciclo de vida das reivindicações de itens, máquina de estados, moderação do ADMIN e coordenação da Saga coreografada.
+2. **[auth-service](services/auth-service/README.md)**: Cadastro, login, emissão de JWT, controle de papéis (`USER`/`ADMIN`), proteção de força bruta e publicação de `usuario.desativado`.
+3. **[ocorrencia-service](services/ocorrencia-service/README.md)**: Gerenciamento do ciclo de vida das reivindicações de itens, máquina de estados, moderação do ADMIN e coordenação da Saga coreografada.
 4. **[item-service](services/item-service/README.md)**: Catálogo dos itens achados e perdidos com persistência em PostgreSQL.
 
 ---
@@ -52,7 +52,7 @@ Cada microsserviço foi concebido seguindo o princípio da responsabilidade úni
   - **Rate Limiting**: Controle de taxa em memória por cliente e por rota (com janela de 1 minuto e header `Retry-After`), prevenindo abusos e negação de serviço.
   - **Auditoria & Administração**: Registra todas as chamadas em tabela `request_logs` e disponibiliza API administrativa interna para gerenciamento dinâmico de rotas via header `X-Admin-Key`.
 
-### 2. 🛡️ Auth Service (`item-auth`)
+### 2. 🛡️ Auth Service (`auth-service`)
 - **Papel**: Gerenciamento de Identidade, Acesso e Usuários (IAM).
 - **Porta Interna**: `8081` (no container `auth-service`).
 - **Banco de Dados**: H2 embarcado em modo arquivo (`authdb`).
@@ -73,7 +73,7 @@ Cada microsserviço foi concebido seguindo o princípio da responsabilidade úni
   - **Gestão de Disponibilidade**: Controle de status do item no inventário (`DISPONIVEL`, `RESERVADO`, `DEVOLVIDO`).
   - **Interface REST para Consulta**: Fornece endpoints síncronos consumidos tanto pelo Gateway quanto diretamente pelo `ocorrencia-service` para pré-validação antes da abertura de ocorrências.
 
-### 4. 📋 Ocorrência Service (`ocorrencias`)
+### 4. 📋 Ocorrência Service (`ocorrencia-service`)
 - **Papel**: Gestão do Ciclo de Vida de Reivindicações e Coordenação da Saga.
 - **Porta Interna**: `8082` (no container `ocorrencia-service`).
 - **Banco de Dados**: H2 embarcado em modo arquivo (`ocorrenciadb`).
