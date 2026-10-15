@@ -4,7 +4,7 @@ Sistema de Achados e Perdidos desenvolvido em arquitetura de microsserviços par
 
 ---
 
-## 🏛️ Arquitetura dos Serviços
+##  Arquitetura dos Serviços
 
 ```
                         [ Cliente / Frontend ]
@@ -32,69 +32,7 @@ Sistema de Achados e Perdidos desenvolvido em arquitetura de microsserviços par
 
 ---
 
-## 🧩 Responsabilidades de Cada Microsserviço
-
-Cada microsserviço foi concebido seguindo o princípio da responsabilidade única (*Single Responsibility Principle*) e isolamento de contexto de domínio:
-
-### 1. 🚪 API Gateway (`api-gateway`)
-- **Papel**: Ponto Único de Entrada (*Single Point of Entry*) e Protetor de Perímetro (*Reverse Proxy*).
-- **Porta**: `8080` (única porta exposta diretamente aos clientes/frontend).
-- **Banco de Dados**: H2 embarcado em modo arquivo (`gatewaydb`) para tabelas de rotas e auditoria.
-- **Principais Responsabilidades**:
-  - **Roteamento Dinâmico**: Roteia requisições em tempo de execução (`/api/auth/**`, `/api/itens/**`, `/api/ocorrencias/**`) casando pelo maior prefixo configurado.
-  - **Autenticação & Autorização Centralizadas**: Intercepta requisições protegidas, valida assinaturas de tokens JWT (HS256) sem onerar o serviço de autenticação, e valida RBAC (permissões `USER` ou `ADMIN`).
-  - **Propagação Segura de Identidade (Anti-Spoofing)**: Injeta cabeçalhos confiáveis para os microsserviços downstream:
-    - `X-User-Id`: Identificador único do usuário autenticado.
-    - `X-User-Roles`: Papéis e privilégios associados.
-    - `X-Correlation-Id`: Identificador unificado para rastreamento distribuído de requisições.
-    - `X-Forwarded-For`: Endereço IP original do cliente.
-  - **Resiliência (Circuit Breaker)**: Utiliza Resilience4j por rota para isolar falhas temporárias ou indisponibilidade de serviços downstream.
-  - **Rate Limiting**: Controle de taxa em memória por cliente e por rota (com janela de 1 minuto e header `Retry-After`), prevenindo abusos e negação de serviço.
-  - **Auditoria & Administração**: Registra todas as chamadas em tabela `request_logs` e disponibiliza API administrativa interna para gerenciamento dinâmico de rotas via header `X-Admin-Key`.
-
-### 2. 🛡️ Auth Service (`auth-service`)
-- **Papel**: Gerenciamento de Identidade, Acesso e Usuários (IAM).
-- **Porta Interna**: `8081` (no container `auth-service`).
-- **Banco de Dados**: H2 embarcado em modo arquivo (`authdb`).
-- **Principais Responsabilidades**:
-  - **Cadastro & Credenciais**: Registro de novos usuários com validação estrita de dados e armazenamento seguro de senhas através de hash unidirecional **BCrypt**.
-  - **Autenticação & Emissão de Tokens**: Validação de credenciais e geração de tokens JWT contendo ID do usuário, e-mail e papéis (`USER`/`ADMIN`).
-  - **Proteção contra Ataques de Força Bruta**: Bloqueio automático de conta por 15 minutos (`423 Locked`) após 5 tentativas consecutivas de senha inválida.
-  - **Autogestão de Conta**: Alteração de senha autenticada pelo próprio titular da conta.
-  - **Administração de Usuários**: Listagem paginada, promoção/rebaixamento de papéis e ativação/desativação de contas (exclusivo para `ADMIN`).
-  - **Mensageria**: Publicação do evento `usuario.desativado` na exchange `achados.events` do RabbitMQ ao suspender uma conta, disparando ações compensatórias pelo sistema.
-
-### 3. 📦 Item Service (`item-service`)
-- **Papel**: Catálogo Central e Inventário de Itens Achados e Perdidos.
-- **Porta**: `8081` (exposta internamente e no host).
-- **Banco de Dados**: PostgreSQL (`itens_db`), garantindo persistência relacional robusta.
-- **Principais Responsabilidades**:
-  - **Catálogo de Itens**: Cadastro, listagem geral, consulta por identificador e detalhamento de pertences (nome, descrição, categoria, localização de encontro e data de registro).
-  - **Gestão de Disponibilidade**: Controle de status do item no inventário (`DISPONIVEL`, `RESERVADO`, `DEVOLVIDO`).
-  - **Interface REST para Consulta**: Fornece endpoints síncronos consumidos tanto pelo Gateway quanto diretamente pelo `ocorrencia-service` para pré-validação antes da abertura de ocorrências.
-
-### 4. 📋 Ocorrência Service (`ocorrencia-service`)
-- **Papel**: Gestão do Ciclo de Vida de Reivindicações e Coordenação da Saga.
-- **Porta Interna**: `8082` (no container `ocorrencia-service`).
-- **Banco de Dados**: H2 embarcado em modo arquivo (`ocorrenciadb`).
-- **Principais Responsabilidades**:
-  - **Abertura de Reivindicações**: Registro de intenção de reivindicação de um item com justificativa detalhada e validação de duplicidade por usuário.
-  - **Máquina de Estados Finita e Auditável**:
-    - `AGUARDANDO_RESERVA` ➔ `EM_ANALISE` ➔ `APROVADA` / `REJEITADA` / `CANCELADA` ➔ `DEVOLVIDA`.
-    - Controle de concorrência com bloqueio otimista (`@Version`).
-    - Registro de cada mudança de estado na tabela de auditoria `ocorrencia_historico`.
-  - **Moderação Administrativa**: Endpoints exclusivos para administradores aprovarem, rejeitarem (com motivo obrigatório) ou confirmarem a devolução física do item.
-  - **Consulta com Restrição de Escopo**: Usuários comuns visualizam apenas suas próprias ocorrências; administradores visualizam todas com filtros por status e item.
-  - **Coordenação da Saga Distribuída (RabbitMQ)**:
-    - Pré-validação síncrona via `RestClient` no `item-service` para conferir existência e status do item.
-    - Publicação de eventos de ciclo de vida (`ocorrencia.reivindicada`, `ocorrencia.devolucao-confirmada`, `ocorrencia.cancelada`).
-    - Consumo de respostas de reserva (`item.reservado`, `item.reserva-negada`).
-    - Cancelamento automático por timeout (`ReservaTimeoutJob` a cada 5 minutos para ocorrências pendentes em `AGUARDANDO_RESERVA`).
-    - Reação ao evento `usuario.desativado`: cancela automaticamente todas as ocorrências ativas de usuários suspensos e compensa liberando os itens.
-
----
-
-## 🔄 Como os Microsserviços Funcionam em Conjunto
+##  Como os Microsserviços Funcionam em Conjunto
 
 A comunicação entre os serviços combina **comunicação síncrona (REST)** para operações de leitura imediata e validação rápida com **comunicação assíncrona orientada a eventos (RabbitMQ / Saga)** para garantir consistência eventual e desacoplamento operacional.
 
@@ -176,7 +114,7 @@ Para garantir a consistência das transações distribuídas sem bloqueios globa
 
 ---
 
-## 🚀 Como Executar com Docker Compose
+##  Como Executar com Docker Compose
 
 Suba todo o ecossistema com um único comando:
 
@@ -192,7 +130,7 @@ docker compose up -d --build
 
 ---
 
-## 🔐 Credenciais Padrão do Seed
+##  Credenciais Padrão do Seed
 
 - **ADMIN Inicial**:
   - E-mail: `admin@achados.local`
