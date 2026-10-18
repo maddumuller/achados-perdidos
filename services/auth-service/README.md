@@ -1,4 +1,4 @@
-# Auth Service (item-auth) - Sistema de Achados e Perdidos (UDESC)
+# Auth Service (auth-service) - Sistema de Achados e Perdidos (UDESC)
 
 Microsserviço de autenticação, autorização e gerenciamento de usuários do Sistema de Achados e Perdidos.
 

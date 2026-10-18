@@ -35,7 +35,7 @@ services:
       retries: 10
 
   auth-service:
-    build: ./services/item-auth
+    build: ./services/auth-service
     container_name: auth-service
     environment:
       JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-com-no-minimo-32-caracteres}
@@ -68,7 +68,7 @@ services:
       - auth-service
 
   ocorrencia-service:
-    build: ./services/ocorrencias
+    build: ./services/ocorrencia-service
     container_name: ocorrencia-service
     environment:
       DB_PATH: /data/ocorrenciadb
