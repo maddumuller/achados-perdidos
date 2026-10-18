@@ -199,3 +199,21 @@ docker compose up -d --build
   - Senha: `Admin@1234`
 - **Gateway Admin Key**:
   - Header: `X-Admin-Key: admin-dev-key`
+
+---
+
+## ⚙️ Integração Contínua (CI - GitHub Actions)
+
+O pipeline de CI está configurado em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) e é executado automaticamente em:
+- **Pushes** nas branches `main` e `develop`
+- **Pull Requests** direcionados a `main` e `develop`
+- **Disparo manual** (*workflow_dispatch*) na aba Actions do GitHub
+
+### Etapas do Pipeline:
+1. **Build & Test (Matrix)**: Execução paralela para cada um dos 4 microsserviços (`api-gateway`, `item-auth`, `item-service`, `ocorrencias`):
+   - Configuração do **JDK 21** (Eclipse Temurin) com cache inteligente do Maven.
+   - Concessão de permissões de execução para o Maven Wrapper (`mvnw`).
+   - Compilação do código, resolução de dependências e execução de todos os testes unitários e de integração (`mvn clean verify`).
+2. **Docker Compose Build**:
+   - Disparado após a aprovação de todos os testes.
+   - Valida a integridade sintática e constrói as imagens Docker de todos os serviços declarados no [`compose.yaml`](compose.yaml).
