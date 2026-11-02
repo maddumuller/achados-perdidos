@@ -1,0 +1,29 @@
+
+version: 2
+
+updates:
+  - package-ecosystem: "maven"
+    directories:
+      - "/services/api-gateway"
+      - "/services/auth-service"
+      - "/services/item-service"
+      - "/services/ocorrencia-service"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/services/api-gateway"
+      - "/services/auth-service"
+      - "/services/item-service"
+      - "/services/ocorrencia-service"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
