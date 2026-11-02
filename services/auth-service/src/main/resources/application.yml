@@ -32,16 +32,4 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
-  endpoint:
-    prometheus:
-      enabled: true
-    health:
-      show-details: always
-
-# Swagger desabilitado por padrao
-springdoc:
-  api-docs:
-    enabled: false
-  swagger-ui:
-    enabled: false
+        include: health
