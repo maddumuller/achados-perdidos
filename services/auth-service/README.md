@@ -1,6 +1,15 @@
-# Auth Service (auth-service) - Sistema de Achados e Perdidos (UDESC)
+# Auth Service (`auth-service`) - Sistema de Achados e Perdidos (UDESC)
 
 Microsserviço de autenticação, autorização e gerenciamento de usuários do Sistema de Achados e Perdidos.
+
+---
+
+## 🌐 Ambientes em Nuvem (Render - DEV e HOMOL)
+
+| Ambiente | Branch | Swagger UI | URL Base (Render) | Health Check |
+| :--- | :--- | :--- | :--- | :--- |
+| **DEV** (Desenvolvimento) | `develop` | **Habilitado** (`/swagger-ui/index.html`) | `https://auth-service-dev-4ru3.onrender.com` | `/actuator/health` |
+| **HOMOL** (Homologação) | `main` | **Desabilitado** (`404 Not Found`) | `https://auth-service-homol-1hvy.onrender.com` | `/actuator/health` |
 
 ---
 
@@ -11,6 +20,9 @@ Microsserviço de autenticação, autorização e gerenciamento de usuários do 
 - **Segurança**: Criptografia de senhas com **BCrypt** (`spring-security-crypto`) e emissão de tokens **JWT** (HS256 com `jjwt 0.12.6`)
 - **Mensageria**: RabbitMQ (`achados.events` topic exchange) com publicação do evento `usuario.desativado` após o commit da transação
 - **Proteção contra Força Bruta**: Bloqueio de conta por 15 minutos após 5 erros consecutivos de senha
+- **Observabilidade**: Spring Boot Actuator + Micrometer Prometheus (`/actuator/prometheus`) integrado ao **Prometheus** e **Grafana**
+- **Qualidade e Cobertura**: JaCoCo (mínimo de 50% de cobertura de linhas) + análise estática no **SonarCloud**
+- **Versionamento**: Semantic Versioning (`1.0.0`)
 
 ---
 
@@ -28,7 +40,7 @@ Microsserviço de autenticação, autorização e gerenciamento de usuários do 
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `SERVER_PORT` | `8081` | Porta do serviço |
+| `PORT` / `SERVER_PORT` | `8081` | Porta HTTP do serviço (compatível com injeção de `PORT` do Render) |
 | `SPRING_PROFILES_ACTIVE` | *(vazio)* | Perfil do ambiente (`dev` habilita o Swagger; `homol` desabilita) |
 | `JWT_SECRET` | `troque-este-segredo-com-no-minimo-32-caracteres` | Chave secreta para assinatura dos tokens JWT |
 | `JWT_EXPIRATION_MINUTES` | `120` | Tempo de expiração do JWT em minutos |
@@ -39,6 +51,7 @@ Microsserviço de autenticação, autorização e gerenciamento de usuários do 
 | `RABBITMQ_PORT` | `5672` | Porta do RabbitMQ |
 | `RABBITMQ_USER` | `guest` | Usuário do RabbitMQ |
 | `RABBITMQ_PASSWORD` | `guest` | Senha do RabbitMQ |
+| `RABBIT_HEALTH_ENABLED` | `false` | Habilita/desabilita verificação do RabbitMQ no `/actuator/health` |
 
 ---
 
@@ -57,18 +70,47 @@ Microsserviço de autenticação, autorização e gerenciamento de usuários do 
 - `PATCH /api/auth/users/{id}/role` - Altera papel (`USER` / `ADMIN`)
 - `PATCH /api/auth/users/{id}/status` - Ativa ou desativa usuário
 
-### Documentação da API (Swagger / OpenAPI)
+### Observabilidade e Documentação (Actuator & Swagger)
+- `GET /actuator/health` - Status de saúde da aplicação
+- `GET /actuator/prometheus` - Métricas no formato OpenMetrics/Prometheus
 - **Ambiente DEV (`SPRING_PROFILES_ACTIVE=dev`)**: Swagger habilitado em `/swagger-ui/index.html` e especificação em `/v3/api-docs`
 - **Ambiente HOMOL (`SPRING_PROFILES_ACTIVE=homol`)**: Swagger e `api-docs` desabilitados
 
 ---
 
-## 🐳 Executando
+## 🔄 Pipeline CI/CD Dedicado e Reutilizável
+
+O serviço possui um pipeline exclusivo em [`.github/workflows/auth-service.yml`](../../.github/workflows/auth-service.yml), que também é invocado de forma modular (`workflow_call`) pelo pipeline geral do grupo ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)):
+
+1. **CI (`build-test-sonar`)**:
+   - Compilação com JDK 21 (Temurin), execução dos testes automatizados e verificação de cobertura mínima com JaCoCo (`./mvnw clean verify`).
+   - Análise de qualidade e cobertura de código com **SonarCloud** (`./mvnw sonar:sonar`).
+2. **Containerização e Versionamento (`publish-image`)**:
+   - Extrai automaticamente a versão semântica (`1.0.0`) do [`pom.xml`](pom.xml).
+   - Constrói a imagem Docker a partir do [`Dockerfile`](Dockerfile) e publica no **GitHub Container Registry (`ghcr.io`)** com as tags `:1.0.0` / `:1.0.0-dev`, `:homol` / `:dev`, `:latest` e `:sha-<commit>`.
+3. **CD (`deploy-dev` e `deploy-homol`)**:
+   - Push na branch `develop` → Aciona automaticamente o Deploy Hook do ambiente **DEV** no Render (`RENDER_DEPLOY_HOOK_DEV`).
+   - Push na branch `main` → Aciona automaticamente o Deploy Hook do ambiente **HOMOL** no Render (`RENDER_DEPLOY_HOOK_HOMOL`).
+
+### Secrets Utilizados no GitHub Actions (`Settings > Secrets and variables > Actions`)
+
+| Secret | Descrição |
+| :--- | :--- |
+| `GITHUB_TOKEN` | Automático do GitHub — utilizado para publicar a imagem no `ghcr.io` |
+| `SONAR_TOKEN` | Token gerado no SonarCloud para envio da análise estática |
+| `SONAR_ORGANIZATION` | *(Opcional)* Organização no SonarCloud (padrão: `maddumuller`) |
+| `SONAR_PROJECT_KEY` | *(Opcional)* Project Key no SonarCloud (padrão: `maddumuller_auth-service`) |
+| `RENDER_DEPLOY_HOOK_DEV` | URL do Deploy Hook do serviço `auth-service-dev` no Render |
+| `RENDER_DEPLOY_HOOK_HOMOL` | URL do Deploy Hook do serviço `auth-service-homol` no Render |
+
+---
+
+## 🐳 Executando Localmente
 
 ### Testes e Build:
 ```bash
 ./mvnw clean test
-./mvnw clean package
+./mvnw clean verify
 ```
 
 ### Docker:

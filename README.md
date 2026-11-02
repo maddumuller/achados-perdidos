@@ -161,18 +161,18 @@ Todos os serviços expõem métricas no padrão Prometheus em `/actuator/prometh
 
 ---
 
-## ⚙️ Integração Contínua (CI - GitHub Actions)
+## ⚙️ CI/CD e Ambientes em Cloud (GitHub Actions + Render)
 
-O pipeline de CI está configurado em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) e é executado automaticamente em:
-- **Pushes** nas branches `main` e `develop`
-- **Pull Requests** direcionados a `main` e `develop`
-- **Disparo manual** (*workflow_dispatch*) na aba Actions do GitHub
+O repositório conta com pipelines modulares no GitHub Actions:
+- **[`.github/workflows/auth-service.yml`](.github/workflows/auth-service.yml)**: Pipeline dedicado e reutilizável (`workflow_call`) do `auth-service`, contendo:
+  1. **Build, Testes e Cobertura (JaCoCo)** + **Análise Estática no SonarCloud**.
+  2. **Publicação automática da imagem Docker** no GitHub Container Registry (`ghcr.io`) utilizando Semantic Versioning (`1.0.0`).
+  3. **Deploy Contínuo (CD)** no Render para os ambientes **DEV** (`develop` → Swagger habilitado) e **HOMOL** (`main` → Swagger desabilitado), cuja infraestrutura também está declarada em [`render.yaml`](render.yaml).
+- **[`.github/workflows/ci.yml`](.github/workflows/ci.yml)**: Pipeline integrador que invoca o workflow dedicado do `auth-service`, executa os testes dos demais microsserviços (`api-gateway`, `item-service`, `ocorrencia-service`) e valida a construção dos containers via `docker compose build`.
 
-### Etapas do Pipeline:
-1. **Build & Test (Matrix)**: Execução paralela para cada um dos 4 microsserviços (`api-gateway`, `item-auth`, `item-service`, `ocorrencias`):
-   - Configuração do **JDK 21** (Eclipse Temurin) com cache inteligente do Maven.
-   - Concessão de permissões de execução para o Maven Wrapper (`mvnw`).
-   - Compilação do código, resolução de dependências e execução de todos os testes unitários e de integração (`mvn clean verify`).
-2. **Docker Compose Build**:
-   - Disparado após a aprovação de todos os testes.
-   - Valida a integridade sintática e constrói as imagens Docker de todos os serviços declarados no [`compose.yaml`](compose.yaml).
+### URLs de Deploy (`auth-service`)
+
+| Ambiente | Branch | Swagger UI | URL Base (Render) |
+| :--- | :--- | :--- | :--- |
+| **DEV** | `develop` | Habilitado (`/swagger-ui/index.html`) | `https://auth-service-dev-4ru3.onrender.com` |
+| **HOMOL** | `main` | Desabilitado (`404 Not Found`) | `https://auth-service-homol-1hvy.onrender.com` |
