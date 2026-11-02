@@ -1,0 +1,7 @@
+# Swagger desabilitado em homologacao
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
