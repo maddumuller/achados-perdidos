@@ -48,9 +48,7 @@ public class GatewayFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest req) {
         String p = req.getRequestURI();
-        String servletPath = req.getServletPath();
-        return p.startsWith("/gateway/") || p.startsWith("/actuator")
-                || (servletPath != null && servletPath.startsWith("/actuator"));
+        return p.startsWith("/gateway/") || p.startsWith("/actuator/");
     }
 
     @Override

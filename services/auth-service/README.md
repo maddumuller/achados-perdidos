@@ -29,7 +29,6 @@ Microsserviço de autenticação, autorização e gerenciamento de usuários do 
 | Variável | Padrão | Descrição |
 |---|---|---|
 | `SERVER_PORT` | `8081` | Porta do serviço |
-| `SPRING_PROFILES_ACTIVE` | *(vazio)* | Perfil do ambiente (`dev` habilita o Swagger; `homol` desabilita) |
 | `JWT_SECRET` | `troque-este-segredo-com-no-minimo-32-caracteres` | Chave secreta para assinatura dos tokens JWT |
 | `JWT_EXPIRATION_MINUTES` | `120` | Tempo de expiração do JWT em minutos |
 | `ADMIN_EMAIL` | `admin@achados.local` | E-mail do administrador padrão inicial |
@@ -56,10 +55,6 @@ Microsserviço de autenticação, autorização e gerenciamento de usuários do 
 - `GET /api/auth/users?page=0&size=20` - Lista paginada de usuários
 - `PATCH /api/auth/users/{id}/role` - Altera papel (`USER` / `ADMIN`)
 - `PATCH /api/auth/users/{id}/status` - Ativa ou desativa usuário
-
-### Documentação da API (Swagger / OpenAPI)
-- **Ambiente DEV (`SPRING_PROFILES_ACTIVE=dev`)**: Swagger habilitado em `/swagger-ui/index.html` e especificação em `/v3/api-docs`
-- **Ambiente HOMOL (`SPRING_PROFILES_ACTIVE=homol`)**: Swagger e `api-docs` desabilitados
 
 ---
 
