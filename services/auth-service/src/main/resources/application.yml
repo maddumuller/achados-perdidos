@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: ${PORT:${SERVER_PORT:8081}}
 
 spring:
   application:
@@ -38,6 +38,9 @@ management:
       enabled: true
     health:
       show-details: always
+  health:
+    rabbit:
+      enabled: ${RABBIT_HEALTH_ENABLED:false}
 
 # Swagger desabilitado por padrao
 springdoc:

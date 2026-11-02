@@ -1,0 +1,41 @@
+services:
+  # Ambiente DEV (branch develop - Swagger habilitado)
+  - type: web
+    name: auth-service-dev
+    runtime: docker
+    plan: free
+    branch: develop
+    rootDir: services/auth-service
+    dockerfilePath: ./Dockerfile
+    autoDeploy: false
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: dev
+      - key: RABBIT_HEALTH_ENABLED
+        value: "false"
+      - key: DB_PATH
+        value: /data/authdb
+      - key: JWT_SECRET
+        generateValue: true
+
+  # Ambiente HOMOL (branch main - Swagger desabilitado)
+  - type: web
+    name: auth-service-homol
+    runtime: docker
+    plan: free
+    branch: main
+    rootDir: services/auth-service
+    dockerfilePath: ./Dockerfile
+    autoDeploy: false
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: homol
+      - key: RABBIT_HEALTH_ENABLED
+        value: "false"
+      - key: DB_PATH
+        value: /data/authdb
+      - key: JWT_SECRET
+        generateValue: true
+
