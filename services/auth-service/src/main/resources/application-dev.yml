@@ -1,0 +1,7 @@
+# Swagger habilitado em desenvolvimento
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
