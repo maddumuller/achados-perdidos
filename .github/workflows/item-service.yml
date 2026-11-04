@@ -1,8 +1,5 @@
-name: SonarCloud - Item Service
 
-permissions:
-  contents: read
-  packages: write
+name: CI/CD - Item Service
 
 on:
   push:
@@ -16,10 +13,20 @@ on:
       - 'services/item-service/**'
       - '.github/workflows/item-service.yml'
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      skip_cd:
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  sonarcloud:
-    name: Testes e análise SonarCloud
+  build-test-sonar:
+    name: Build, testes e SonarCloud
     runs-on: ubuntu-latest
 
     defaults:
@@ -27,7 +34,7 @@ jobs:
         working-directory: services/item-service
 
     steps:
-      - name: Baixar código
+      - name: Baixar codigo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -40,24 +47,23 @@ jobs:
           cache: maven
           cache-dependency-path: services/item-service/pom.xml
 
-      - name: Permitir execução do Maven Wrapper
+      - name: Permitir execucao do Maven Wrapper
         run: chmod +x mvnw
 
-      - name: Executar testes e SonarCloud
+      - name: Executar build, testes e SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_ITEM }}
         run: |
-          ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          ./mvnw -B clean verify \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.organization=maddumuller \
             -Dsonar.projectKey=maddumuller_achados-perdidos \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-  
-  
 
-  docker:
-    name: Publicar imagem Docker no GHCR
-    needs: sonarcloud
+  publish-image:
+    name: Publicar imagem no GHCR
+    needs: build-test-sonar
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
@@ -72,12 +78,52 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Gerar e publicar imagem Docker
+      - name: Definir tag do ambiente
+        id: image
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "develop" ]]; then
+            echo "tag=dev" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=homol" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Construir e publicar imagem
         uses: docker/build-push-action@v6
         with:
           context: ./services/item-service
           file: ./services/item-service/Dockerfile
           push: true
           tags: |
+            ghcr.io/maddumuller/achados-perdidos-item:${{ steps.image.outputs.tag }}
             ghcr.io/maddumuller/achados-perdidos-item:${{ github.sha }}
 
+  deploy-dev:
+    name: Deploy DEV no Render
+    needs: publish-image
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/develop' &&
+      inputs.skip_cd != true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Acionar deploy DEV
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_ITEM_DEV }}
+        run: curl --fail --show-error --silent --retry 3 -X POST "$DEPLOY_HOOK"
+
+  deploy-homol:
+    name: Deploy HOMOL no Render
+    needs: publish-image
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.skip_cd != true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Acionar deploy HOMOL
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_ITEM_HOMOL }}
+        run: curl --fail --show-error --silent --retry 3 -X POST "$DEPLOY_HOOK"
