@@ -31,11 +31,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
         // Atua somente nos endpoints protegidos do auth-service
-        String servletPath = request.getServletPath();
-        if ((servletPath != null && servletPath.startsWith("/actuator")) || (path != null && path.startsWith("/actuator"))) {
-            return true;
-        }
-        return path == null || (!path.startsWith("/api/auth/me") && !path.startsWith("/api/auth/users"));
+        return !path.startsWith("/api/auth/me") && !path.startsWith("/api/auth/users");
     }
 
     @Override

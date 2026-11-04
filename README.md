@@ -127,27 +127,6 @@ docker compose up -d --build
 - **API Gateway**: `http://localhost:8080` (Acesso principal para todas as rotas de API)
 - **RabbitMQ Dashboard**: `http://localhost:15672` (Credenciais: `guest` / `guest`)
 - **Postgres (Item DB)**: `localhost:5433`
-- **Item Service**: `http://localhost:8081/actuator/prometheus`
-- **Prometheus**: `http://localhost:9090`
-- **Grafana**: `http://localhost:3000` (Credenciais padrão: `admin` / `admin`)
-
-Veja a seção [Monitoramento e Métricas](#monitoramento-e-métricas-prometheus--grafana) para as alterações de observabilidade e como aplicá-las.
-
----
-
-##  Monitoramento e Métricas (Prometheus + Grafana)
-
-Todos os serviços expõem métricas no padrão Prometheus em `/actuator/prometheus`, coletadas pelo Prometheus e visualizadas no Grafana.
-
-
-1. Aguarde ~15–30s (inicialização dos serviços + intervalo de scrape) e verifique os targets em `http://localhost:9090/targets`: todos devem estar **UP**.
-2. Teste um endpoint de métricas pelo navegador ou terminal:
-   ```bash
-   curl http://localhost:8080/actuator/prometheus
-   ```
-   > Use `localhost`, e não o nome do container (`api-gateway`): esses nomes só resolvem dentro da rede do Docker. `auth-service` e `ocorrencia-service` não publicam portas no host, sendo acessados apenas pelo Prometheus.
-3. Configure o Data Source no Grafana (`http://localhost:3000` → **Connections → Data sources → Add → Prometheus**) com a URL `http://prometheus:9090` e clique em **Save & test**.
-4. Importe o dashboard: **Dashboards → Import → Upload JSON file** → selecione `grafana-dashboard.json` → **Import**.
 
 ---
 
