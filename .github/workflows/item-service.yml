@@ -1,5 +1,9 @@
 name: SonarCloud - Item Service
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches: [develop, main]
@@ -48,3 +52,32 @@ jobs:
             -Dsonar.organization=maddumuller \
             -Dsonar.projectKey=maddumuller_achados-perdidos \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+  
+  
+
+  docker:
+    name: Publicar imagem Docker no GHCR
+    needs: sonarcloud
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v4
+
+      - name: Autenticar no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Gerar e publicar imagem Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/item-service
+          file: ./services/item-service/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/maddumuller/achados-perdidos-item:${{ github.sha }}
+
