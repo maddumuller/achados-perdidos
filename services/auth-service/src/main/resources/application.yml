@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: ${PORT:${SERVER_PORT:8081}}
 
 spring:
   application:
@@ -32,4 +32,19 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  health:
+    rabbit:
+      enabled: ${RABBIT_HEALTH_ENABLED:false}
+
+# Swagger desabilitado por padrao
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
