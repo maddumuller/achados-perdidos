@@ -126,7 +126,7 @@ jobs:
           echo "Tags que serão publicadas: $TAGS"
 
       - name: Build e Push da imagem Docker
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: ${{ env.SERVICE_DIR }}
           file: ${{ env.SERVICE_DIR }}/Dockerfile

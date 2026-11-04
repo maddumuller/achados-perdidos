@@ -89,7 +89,7 @@ jobs:
           fi
 
       - name: Construir e publicar imagem
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./services/item-service
           file: ./services/item-service/Dockerfile
