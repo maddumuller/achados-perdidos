@@ -1,0 +1,50 @@
+name: SonarCloud - Item Service
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'services/item-service/**'
+      - '.github/workflows/item-service.yml'
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'services/item-service/**'
+      - '.github/workflows/item-service.yml'
+  workflow_dispatch:
+
+jobs:
+  sonarcloud:
+    name: Testes e análise SonarCloud
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: services/item-service
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: services/item-service/pom.xml
+
+      - name: Permitir execução do Maven Wrapper
+        run: chmod +x mvnw
+
+      - name: Executar testes e SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_ITEM }}
+        run: |
+          ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.organization=maddumuller \
+            -Dsonar.projectKey=maddumuller_achados-perdidos \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
