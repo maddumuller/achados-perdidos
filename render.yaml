@@ -39,3 +39,54 @@ services:
       - key: JWT_SECRET
         generateValue: true
 
+  # Item Service DEV (branch develop - Swagger habilitado)
+  - type: web
+    name: item-service-dev
+    runtime: docker
+    plan: free
+    branch: develop
+    rootDir: services/item-service
+    dockerfilePath: ./Dockerfile
+    autoDeploy: false
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: dev
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: item-db-dev
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: item-db-dev
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: item-db-dev
+          property: password
+
+  # Item Service HOMOL (branch main - Swagger desabilitado)
+  - type: web
+    name: item-service-homol
+    runtime: docker
+    plan: free
+    branch: main
+    rootDir: services/item-service
+    dockerfilePath: ./Dockerfile
+    autoDeploy: false
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: homol
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: item-db-homol
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: item-db-homol
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: item-db-homol
+          property: password
