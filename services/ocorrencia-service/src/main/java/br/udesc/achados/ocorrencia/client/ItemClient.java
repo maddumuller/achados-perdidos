@@ -27,7 +27,9 @@ public class ItemClient {
                     .header("X-Correlation-Id", correlationId != null ? correlationId : "")
                     .retrieve()
                     .onStatus(s -> s.value() == 404,
-                            (rq, rs) -> { throw new NotFoundException("Item não encontrado"); })
+                            (rq, rs) -> {
+                                throw new NotFoundException("Item não encontrado");
+                            })
                     .body(ItemResumo.class);
         } catch (NotFoundException e) {
             throw e;

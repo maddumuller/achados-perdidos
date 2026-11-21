@@ -51,8 +51,8 @@ public class DataSeeder implements CommandLineRunner {
             RouteDefinition itensRoute = new RouteDefinition(
                     "itens",
                     "/api/itens",
-                    properties.getServices().getItemUrl(),
-                    false,
+                    properties.getServices().getItemUrl() + "/itens",
+                    true,
                     true,
                     null,
                     60,

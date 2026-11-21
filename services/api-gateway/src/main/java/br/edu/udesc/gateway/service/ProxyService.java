@@ -125,7 +125,7 @@ public class ProxyService {
         HttpHeaders headers = responseEntity.getHeaders();
         headers.forEach((headerName, values) -> {
             String lower = headerName.toLowerCase();
-            if (!lower.equals("transfer-encoding")) {
+            if (!lower.equals("transfer-encoding") && !lower.startsWith("access-control-")) {
                 for (String value : values) {
                     res.addHeader(headerName, value);
                 }
