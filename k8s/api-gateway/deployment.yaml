@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: achados-perdidos
+  labels:
+    app: api-gateway
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: api-gateway
+          image: api-gateway:tp3
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: GATEWAY_HTTP_READ_TIMEOUT_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: GATEWAY_HTTP_READ_TIMEOUT_SECONDS
+            - name: GATEWAY_SHARED_ROUTES
+              value: 'true'
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: API_GATEWAY_DB_URL
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: GATEWAY_SERVER_PORT
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET
+            - name: ADMIN_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: ADMIN_KEY
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: GATEWAY_AUTH_SERVICE_URL
+            - name: OCORRENCIA_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: GATEWAY_OCORRENCIA_SERVICE_URL
+            - name: ITEM_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: GATEWAY_ITEM_SERVICE_URL
+            - name: JAVA_TOOL_OPTIONS
+              value: '-Xms32m -Xmx144m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss512k -XX:ActiveProcessorCount=2'
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              value: 'true'
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: '4'
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              memory: 352Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            timeoutSeconds: 6
+            periodSeconds: 5
+            failureThreshold: 72
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            timeoutSeconds: 6
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            timeoutSeconds: 6
+            periodSeconds: 15
+            failureThreshold: 6

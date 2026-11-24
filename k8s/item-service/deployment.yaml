@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: item-service
+  namespace: achados-perdidos
+  labels:
+    app: item-service
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: item-service
+  template:
+    metadata:
+      labels:
+        app: item-service
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: item-service
+          image: item-service:tp3
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8081
+          env:
+            - name: ITEM_RESERVATIONS_ENABLED
+              value: 'true'
+            - name: SPRING_RABBITMQ_LISTENER_SIMPLE_PREFETCH
+              value: '1'
+            - name: SPRING_RABBITMQ_LISTENER_SIMPLE_DEFAULT_REQUEUE_REJECTED
+              value: 'false'
+            - name: SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_ENABLED
+              value: 'true'
+            - name: SPRING_RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: AUTH_RABBITMQ_HOST
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: AUTH_RABBITMQ_USER
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: RABBITMQ_PASSWORD
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: ITEM_DB_URL
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: ITEM_SERVER_PORT
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: ITEM_DATASOURCE_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: ITEM_JPA_DDL_AUTO
+            - name: JAVA_TOOL_OPTIONS
+              value: '-Xms32m -Xmx144m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss512k -XX:ActiveProcessorCount=2'
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              value: 'true'
+            - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+              value: '4'
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              memory: 352Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            timeoutSeconds: 6
+            periodSeconds: 5
+            failureThreshold: 72
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            timeoutSeconds: 6
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            timeoutSeconds: 6
+            periodSeconds: 15
+            failureThreshold: 6

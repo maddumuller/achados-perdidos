@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: achados-perdidos
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.4.2
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              value: "admin"
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: GRAFANA_PASSWORD
+          volumeMounts:
+            - name: grafana-datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: grafana-dashboards
+              mountPath: /etc/grafana/provisioning/dashboards/provider.yaml
+              subPath: provider.yaml
+            - name: grafana-dashboards
+              mountPath: /var/lib/grafana/dashboards/achados.json
+              subPath: achados.json
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            timeoutSeconds: 6
+            periodSeconds: 5
+            failureThreshold: 72
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            timeoutSeconds: 6
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            timeoutSeconds: 6
+            periodSeconds: 10
+            failureThreshold: 6
+      volumes:
+        - name: grafana-dashboards
+          configMap:
+            name: grafana-dashboards
+        - name: grafana-datasources
+          configMap:
+            name: grafana-datasources
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: achados-perdidos
+  labels:
+    app: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP

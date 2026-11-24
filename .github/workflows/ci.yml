@@ -78,3 +78,25 @@ jobs:
         env:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'ci_postgres_password' }}
         run: docker compose build
+
+  validate-k8s:
+    name: Validar Manifests Kubernetes
+    runs-on: ubuntu-latest
+    needs:
+      - auth-service
+      - item-service
+      - test
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Instalar kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Instalar kubeconform
+        run: |
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar -xz kubeconform
+      - name: Validar manifests renderizados
+        run: |
+          set -o pipefail
+          kubectl kustomize k8s | ./kubeconform -strict -summary -kubernetes-version 1.34.0

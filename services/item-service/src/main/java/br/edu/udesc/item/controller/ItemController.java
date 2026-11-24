@@ -9,7 +9,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/itens")
+@RequestMapping({"/itens", "/api/itens"})
 public class ItemController {
 
     private final ItemService service;
@@ -30,8 +30,18 @@ public class ItemController {
     }
 
     @GetMapping("/{id}")
-    public Item buscarPorId(@PathVariable Long id) {
-        return service.buscarPorId(id);
+    public Item buscarPorId(@PathVariable String id) {
+        long numericId;
+        try {
+            numericId = br.edu.udesc.item.service.ItemReference.numericId(id);
+        } catch (IllegalArgumentException e) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST, "ID de item inválido");
+        }
+        try {
+            return service.buscarPorId(numericId);
+        } catch (IllegalArgumentException e) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
     }
 
     @PatchMapping("/{id}/status")

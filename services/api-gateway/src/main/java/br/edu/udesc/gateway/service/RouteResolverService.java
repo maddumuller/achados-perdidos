@@ -3,6 +3,7 @@ package br.edu.udesc.gateway.service;
 import br.edu.udesc.gateway.domain.RouteDefinition;
 import br.edu.udesc.gateway.repository.RouteDefinitionRepository;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -15,6 +16,9 @@ public class RouteResolverService {
 
     private final RouteDefinitionRepository repository;
     private final List<RouteDefinition> cachedRoutes = new CopyOnWriteArrayList<>();
+
+    @Value("${gateway.shared-routes:false}")
+    private boolean sharedRoutes;
 
     public RouteResolverService(RouteDefinitionRepository repository) {
         this.repository = repository;
@@ -35,7 +39,8 @@ public class RouteResolverService {
             return Optional.empty();
         }
 
-        return cachedRoutes.stream()
+        List<RouteDefinition> routes = sharedRoutes ? repository.findByEnabledTrue() : cachedRoutes;
+        return routes.stream()
                 .filter(RouteDefinition::isEnabled)
                 .filter(route -> matchesPrefix(path, route.getPathPrefix()))
                 .max(Comparator.comparingInt(r -> r.getPathPrefix().length()));
