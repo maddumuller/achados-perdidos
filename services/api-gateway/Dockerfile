@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN chmod +x mvnw && ./mvnw clean package -DskipTests
+RUN --mount=type=cache,id=achados-tp3-maven,target=/root/.m2,sharing=locked sed -i "s/\r$//" mvnw && sh ./mvnw -B -ntp clean package -DskipTests
 
 FROM eclipse-temurin:21-jre
 

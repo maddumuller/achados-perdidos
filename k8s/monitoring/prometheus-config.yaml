@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: achados-perdidos
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: auth-service
+        metrics_path: /actuator/prometheus
+        dns_sd_configs:
+          - names: ['auth-service-metrics.achados-perdidos.svc.cluster.local']
+            type: A
+            port: 8081
+            refresh_interval: 15s
+      - job_name: item-service
+        metrics_path: /actuator/prometheus
+        dns_sd_configs:
+          - names: ['item-service-metrics.achados-perdidos.svc.cluster.local']
+            type: A
+            port: 8081
+            refresh_interval: 15s
+      - job_name: ocorrencia-service
+        metrics_path: /actuator/prometheus
+        dns_sd_configs:
+          - names: ['ocorrencia-service-metrics.achados-perdidos.svc.cluster.local']
+            type: A
+            port: 8082
+            refresh_interval: 15s
+      - job_name: api-gateway
+        metrics_path: /actuator/prometheus
+        dns_sd_configs:
+          - names: ['api-gateway-metrics.achados-perdidos.svc.cluster.local']
+            type: A
+            port: 8080
+            refresh_interval: 15s

@@ -14,4 +14,13 @@ public record CreateOcorrenciaRequest(
         @Size(min = 20, max = 1000, message = "A justificativa deve ter entre 20 e 1000 caracteres")
         String justificativa
 ) {
+    @com.fasterxml.jackson.annotation.JsonCreator
+    public static CreateOcorrenciaRequest fromJson(
+            @com.fasterxml.jackson.annotation.JsonProperty("itemId") String itemId,
+            @com.fasterxml.jackson.annotation.JsonProperty("justificativa") String justificativa) {
+        UUID reference = itemId == null ? null : itemId.matches("[1-9][0-9]*")
+                ? new UUID(0, Long.parseLong(itemId))
+                : UUID.fromString(itemId);
+        return new CreateOcorrenciaRequest(reference, justificativa);
+    }
 }

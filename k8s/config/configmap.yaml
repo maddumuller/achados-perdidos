@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: achados-perdidos
+data:
+  # Postgres
+  POSTGRES_DB: "itens_db"
+  POSTGRES_USER: "postgres"
+
+  # Item Service
+  ITEM_SERVER_PORT: "8081"
+  ITEM_DATASOURCE_USERNAME: "postgres"
+  ITEM_JPA_DDL_AUTO: "update"
+
+  # Auth Service
+  AUTH_SERVER_PORT: "8081"
+  AUTH_ADMIN_EMAIL: "admin@achados.local"
+  AUTH_RABBITMQ_HOST: "rabbitmq"
+  AUTH_RABBITMQ_PORT: "5672"
+  AUTH_RABBITMQ_USER: "achados"
+
+  # API Gateway
+  GATEWAY_SERVER_PORT: "8080"
+  GATEWAY_HTTP_READ_TIMEOUT_SECONDS: "60"
+  GATEWAY_AUTH_SERVICE_URL: "http://auth-service:8081"
+  GATEWAY_OCORRENCIA_SERVICE_URL: "http://ocorrencia-service:8082"
+  GATEWAY_ITEM_SERVICE_URL: "http://item-service:8081"
+
+  # Ocorrencia Service
+  OCORRENCIA_SERVER_PORT: "8082"
+  OCORRENCIA_ITEM_SERVICE_URL: "http://item-service:8081"
+  OCORRENCIA_RABBITMQ_HOST: "rabbitmq"
+  OCORRENCIA_RESERVA_TIMEOUT: "5"
+
+  # RabbitMQ
+  RABBITMQ_DEFAULT_USER: "achados"
+
+  AUTH_DB_URL: jdbc:postgresql://postgres:5432/itens_db?currentSchema=auth
+  ITEM_DB_URL: jdbc:postgresql://postgres:5432/itens_db?currentSchema=itens
+  OCORRENCIA_DB_URL: jdbc:postgresql://postgres:5432/itens_db?currentSchema=ocorrencias
+  API_GATEWAY_DB_URL: jdbc:postgresql://postgres:5432/itens_db?currentSchema=gateway

@@ -155,3 +155,74 @@ O repositório conta com pipelines modulares no GitHub Actions:
 | :--- | :--- | :--- | :--- |
 | **DEV** | `develop` | Habilitado (`/swagger-ui/index.html`) | `https://auth-service-dev-4ru3.onrender.com` |
 | **HOMOL** | `main` | Desabilitado (`404 Not Found`) | `https://auth-service-homol-1hvy.onrender.com` |
+
+---
+
+## Trabalho Prático 3 — Kubernetes
+
+O perfil Minikube `achados-tp3` executa duas réplicas de cada um dos quatro microsserviços. Cada serviço tem Deployment, Service interno e um Service headless para que o Prometheus descubra os dois pods por DNS. Os serviços compartilham um PostgreSQL persistente com schemas separados. O RabbitMQ transporta os eventos de reserva, cancelamento e devolução. O Traefik recebe as requisições do Ingress e entrega o caminho original ao gateway.
+
+### Instalar e iniciar no Windows
+
+Abra o Docker Desktop no modo de containers Linux e use o PowerShell 7. O perfil usa 2 CPUs e 3.400 MiB de memória. Para preparar um ambiente do zero, reserve cerca de 12 GB no disco C: para imagens, caches do build e dados locais. A retomada de um perfil existente usa as imagens já carregadas.
+
+```powershell
+winget install --id Kubernetes.minikube --exact
+# Se kubectl não estiver disponível no PATH pelo Docker Desktop
+winget install --id Kubernetes.kubectl --exact
+```
+
+Reabra o PowerShell depois da instalação. Na raiz do repositório, execute:
+
+```powershell
+docker info --format '{{.OSType}}'
+(Get-PSDrive C).Free / 1GB
+pwsh -NoProfile -File .\k8s\deploy.ps1
+```
+
+O script constrói as imagens uma por vez, cria o Secret no cluster na primeira execução, inicializa os schemas e aguarda os Deployments. O arquivo `k8s/config/secret.example.yaml` documenta as chaves. As credenciais geradas são reutilizadas nas próximas execuções. O PostgreSQL do cluster começa vazio. Os bancos usados pelo Compose continuam disponíveis no ambiente original.
+
+Se o download padrão da imagem base estiver lento no Minikube 1.39.0, use o espelho oficial no Docker Hub:
+
+```powershell
+docker pull kicbase/stable:v0.0.51
+pwsh -NoProfile -File .\k8s\deploy.ps1 -BaseImage docker.io/kicbase/stable:v0.0.51
+```
+
+### Validar e demonstrar ao professor
+
+```powershell
+minikube status -p achados-tp3
+kubectl --context achados-tp3 -n achados-perdidos get deploy,pods,svc,ingress,pvc
+kubectl --context achados-tp3 -n achados-perdidos get configmap app-config
+kubectl --context achados-tp3 -n achados-perdidos describe secret app-secrets
+pwsh -NoProfile -File .\k8s\verify.ps1
+```
+
+O teste cria um usuário, faz login, cadastra um item, abre uma ocorrência e verifica a reserva e a liberação do item via RabbitMQ. Também verifica duas réplicas prontas por serviço, métricas JVM no Prometheus e o dashboard provisionado no Grafana. Confira o resultado do teste no terminal. Os registros de demonstração permanecem no banco do cluster.
+
+Para mostrar as interfaces, deixe cada encaminhamento aberto em um terminal separado:
+
+```powershell
+kubectl --context achados-tp3 -n achados-perdidos port-forward svc/traefik 8080:80
+kubectl --context achados-tp3 -n achados-perdidos port-forward svc/prometheus 9090:9090
+kubectl --context achados-tp3 -n achados-perdidos port-forward svc/grafana 3000:3000
+```
+
+- Ingress em `http://127.0.0.1:8080`. Demonstre o roteamento com `curl.exe -H "Host: achados-perdidos.local" http://127.0.0.1:8080/actuator/health/readiness`. O encaminhamento permite usar o controlador no Windows sem editar o arquivo `hosts`.
+- Prometheus em `http://localhost:9090/targets`. Confira dois alvos por microsserviço e execute `sum by (job) (up{job!="prometheus"})`.
+- Grafana em `http://localhost:3000/d/achados-tp3`. Entre como `admin` com a senha do Secret e abra o dashboard **Achados e Perdidos**. Use um terminal privado para consultar a senha:
+
+```powershell
+$encoded = kubectl --context achados-tp3 -n achados-perdidos get secret app-secrets -o 'jsonpath={.data.GRAFANA_PASSWORD}'
+[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded))
+```
+
+### Pausar e retomar
+
+```powershell
+minikube stop -p achados-tp3
+minikube start -p achados-tp3
+```
+
+O perfil e os volumes ficam disponíveis depois de `stop`. A pipeline existente continua com os testes, os builds e as regras de deploy para Render. O job de Kubernetes valida o resultado de `kubectl kustomize k8s` com kubeconform.

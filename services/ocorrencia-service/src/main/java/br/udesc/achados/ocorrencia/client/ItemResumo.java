@@ -33,6 +33,6 @@ public record ItemResumo(
     }
 
     public boolean isAberto() {
-        return "ABERTO".equalsIgnoreCase(status);
+        return "ABERTO".equalsIgnoreCase(status) || "DISPONIVEL".equalsIgnoreCase(status);
     }
 }

@@ -87,9 +87,20 @@ import jakarta.validation.constraints.Size;
         @Enumerated(EnumType.STRING)
         private StatusItem status;
 
+        @Column(name = "reserva_ocorrencia")
+        private java.util.UUID reservaOcorrencia;
+
+        @com.fasterxml.jackson.annotation.JsonIgnore
+        public java.util.UUID getReservaOcorrencia() {
+            return reservaOcorrencia;
+        }
+
+        public void setReservaOcorrencia(java.util.UUID reservaOcorrencia) {
+            this.reservaOcorrencia = reservaOcorrencia;
+        }
+
         public Item() {
         }
 
 
     }
-
